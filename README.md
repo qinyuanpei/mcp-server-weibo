@@ -2,6 +2,10 @@
 
 这是一个基于 [Model Context Protocol](https://modelcontextprotocol.io) 的服务器，用于抓取微博用户信息、动态和搜索功能。该服务器可以帮助获取微博用户的详细信息、动态内容以及进行用户搜索。
 
+<a href="https://glama.ai/mcp/servers/@qinyuanpei/mcp-server-weibo">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@qinyuanpei/mcp-server-weibo/badge" alt="Weibo Server MCP server" />
+</a>
+
 ## 安装
 
 从源代码安装：
