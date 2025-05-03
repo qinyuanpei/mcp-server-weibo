@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/qinyuanpei-mcp-server-weibo-badge.png)](https://mseep.ai/app/qinyuanpei-mcp-server-weibo)
+
 # Weibo MCP Server
 
 这是一个基于 [Model Context Protocol](https://modelcontextprotocol.io) 的服务器，用于抓取微博用户信息、动态和搜索功能。该服务器可以帮助获取微博用户的详细信息、动态内容以及进行用户搜索。
