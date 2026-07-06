@@ -7,6 +7,12 @@ import json
 import click
 from mcp_server_weibo.weibo import WeiboCrawler
 
+import sys
+import io
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 
 @click.group()
 @click.version_option(version="1.0.0")
