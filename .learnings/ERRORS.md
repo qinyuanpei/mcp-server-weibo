@@ -29,6 +29,27 @@ If Git history or status is needed, an authorized user can add this repository a
 
 ---
 
+## [ERR-20260825-004] github_actions_status_cli
+
+**Logged**: 2026-08-25T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: infra
+
+### Summary
+GitHub CLI is unavailable in the local execution environment.
+
+### Error
+```
+gh : The term 'gh' is not recognized
+```
+
+### Resolution
+- **Resolved**: 2026-08-25T00:00:00+08:00
+- **Notes**: Used the repository's public Actions page as the status-check fallback.
+
+---
+
 ## [ERR-20260825-003] python310_tomllib_check
 
 **Logged**: 2026-08-25T00:00:00+08:00

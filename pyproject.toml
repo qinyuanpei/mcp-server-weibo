@@ -1,6 +1,6 @@
 [project]
 name = "mcp-server-weibo"
-version = "1.2.0"
+version = "1.2.1"
 description = "A MCP Server for Weibo"
 keywords = ["MCP", "Model Context Protocol", "Weibo", "Python", "Social Networks"]
 readme = "README.md"
