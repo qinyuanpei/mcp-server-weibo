@@ -1,6 +1,6 @@
 # Weibo MCP Server
 
-通过微博访客接口提供用户、微博、热搜、评论、话题及社交关系数据。服务始终自动申请访客 Cookie，不读取或保存用户 Cookie。
+通过微博访客接口提供用户、微博、热搜、评论、话题及社交关系数据。默认自动申请访客 Cookie，不读取用户手工提供的 Cookie；CLI 可通过扫码登录保存本机登录会话。
 
 ## 选择适合你的方式
 
@@ -32,6 +32,9 @@ HTTP 模式使用 Streamable HTTP 端点 `http://localhost:4200/mcp`。完整配
 uvx --from mcp-server-weibo weibo-cli trending -n 3
 uvx --from mcp-server-weibo weibo-cli users "雷军" -n 5
 uvx --from mcp-server-weibo weibo-cli feeds 1749127163 -n 10 --no-include-pics
+
+# 可选：扫码创建本机 CLI 登录会话
+uvx --from mcp-server-weibo weibo-cli login
 ```
 
 除 `profile` 外，CLI 命令输出一个完整 JSON 数组。完整命令、分页和精简输出选项见 [CLI 使用指南](docs/CLI.md)。

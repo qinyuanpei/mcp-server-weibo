@@ -1,6 +1,6 @@
 # Weibo MCP Server
 
-Access Weibo users, posts, trending topics, comments, topics, and social-graph data through automatically generated visitor cookies. User-provided cookies are neither read nor stored.
+Access Weibo users, posts, trending topics, comments, topics, and social-graph data through automatically generated visitor cookies. User-provided cookies are never read; CLI users may optionally create a locally stored session by scanning a QR code.
 
 ## Choose an interface
 
@@ -32,6 +32,9 @@ The Streamable HTTP endpoint is `http://localhost:4200/mcp`. See the [MCP guide]
 uvx --from mcp-server-weibo weibo-cli trending -n 3
 uvx --from mcp-server-weibo weibo-cli users "Lei Jun" -n 5
 uvx --from mcp-server-weibo weibo-cli feeds 1749127163 -n 10 --no-include-pics
+
+# Optional: scan the displayed QR code to create a local authenticated CLI session
+uvx --from mcp-server-weibo weibo-cli login
 ```
 
 All collection commands print one valid JSON array; `profile` prints one JSON object. See the [CLI guide](docs/CLI_EN.md) for all commands.

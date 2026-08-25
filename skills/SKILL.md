@@ -5,7 +5,7 @@ description: Query public Weibo data from a terminal with the bundled weibo-cli 
 
 # Weibo CLI
 
-Use `weibo-cli` for direct terminal access. It automatically generates visitor cookies; do not configure or supply user cookies.
+Use `weibo-cli` for direct terminal access. It automatically generates visitor cookies; do not configure or supply user cookies. If authenticated access is needed, instruct the user to run `weibo-cli login` and scan its QR code themselves.
 
 ## Install and run
 
@@ -16,6 +16,9 @@ weibo-cli --help
 
 # Run commands directly after installation
 weibo-cli trending -n 3
+
+# Optional, interactive: saves this user's QR-login session locally
+weibo-cli login
 ```
 
 Use `uvx` only for an ad-hoc command when the package should not remain installed:
@@ -38,7 +41,9 @@ Use a feed `id` from `feeds` or `search` as the input to `comments`.
 
 `profile` returns one JSON object. Every collection command returns one valid JSON array, including `[]` for an empty result. This makes outputs suitable for JSON parsers and shell pipelines.
 
-For `feeds`, `pics` is included by default and nested `user` is excluded by default. Use `--no-include-pics` to omit picture metadata or `--include-profile` to include each post's author data.
+`login` is CLI-only. It waits for the user to scan and confirm a QR code, then stores the session at `~/.config/mcp-server-weibo/cookies.json`; treat that file as sensitive. Do not ask users to paste cookies or attempt password or CAPTCHA login.
+
+For `feeds` and `search`, `pics` is included by default and nested `user` is excluded by default. Use `--no-include-pics` to omit picture metadata or `--include-profile` to include each post's author data.
 
 ## Further documentation
 

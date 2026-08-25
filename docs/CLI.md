@@ -15,6 +15,17 @@ uv tool install mcp-server-weibo
 weibo-cli --help
 ```
 
+## 可选：二维码登录
+
+CLI 默认使用自动申请的访客 Cookie。如果查询需要登录会话，可在终端执行扫码登录：
+
+```bash
+weibo-cli login
+weibo-cli login --timeout 300
+```
+
+命令会在终端显示二维码，等待用户在微博 App 中扫码并确认。登录成功后，会话会先校验，再保存至 `~/.config/mcp-server-weibo/cookies.json`。请勿分享此文件。程序不会从环境变量或命令行读取用户 Cookie。扫码登录仅适用于 CLI；MCP 服务始终使用访客 Cookie。
+
 ## 输出格式
 
 `profile` 输出一个 JSON 对象。其他命令都输出一个完整 JSON 数组；没有结果时输出 `[]`，可直接由 `jq`、Python 或其他 JSON 工具解析。
@@ -29,13 +40,14 @@ weibo-cli trending -n 3
 |---|---|
 | `profile <uid>` | 获取用户资料 |
 | `feeds <uid> [-n N]` | 获取用户微博 |
-| `search <keyword> [-n N] [-p P]` | 搜索微博内容 |
+| `search <keyword> [-n N] [-p P] [--no-include-pics] [--include-profile]` | 搜索微博内容 |
 | `users <keyword> [-n N] [-p P]` | 搜索用户 |
 | `topics <keyword> [-n N] [-p P]` | 搜索话题 |
 | `trending [-n N]` | 获取热搜 |
 | `comments <feed_id> [-p P]` | 获取评论 |
 | `followers <uid> [-n N] [-p P]` | 获取关注列表 |
 | `fans <uid> [-n N] [-p P]` | 获取粉丝列表 |
+| `login [--timeout SECONDS]` | 扫码登录并保存本机 CLI 会话 |
 
 ## 常见流程
 
@@ -55,7 +67,7 @@ weibo-cli comments 5173507416919189 -p 1
 
 ## 精简 feeds 输出
 
-`feeds` 默认返回图片元数据，但默认不返回嵌套的 `user`。按需使用以下开关：
+`feeds` 和 `search` 默认返回图片元数据，但默认不返回嵌套的 `user`。按需使用以下开关：
 
 ```bash
 # 省略 pics
@@ -66,6 +78,9 @@ weibo-cli feeds 1749127163 --include-profile
 
 # 同时省略图片并包含作者资料
 weibo-cli feeds 1749127163 --no-include-pics --include-profile
+
+# 搜索结果同样支持这两个开关
+weibo-cli search "雷军" --no-include-pics --include-profile
 ```
 
 ## 适用场景

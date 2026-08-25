@@ -1,12 +1,27 @@
 import asyncio
+import json
 import httpx
 import logging
+import os
 import re
-from urllib.parse import urlencode
+import tempfile
+from pathlib import Path
+from urllib.parse import parse_qs, urlencode, urlparse
+
+import qrcode
+
 from mcp_server_weibo.consts import DEFAULT_HEADERS, PROFILE_URL, FEEDS_URL, SEARCH_URL, COMMENTS_URL
 from mcp_server_weibo.converters import to_comment_item, to_feed_item, to_topic_item, to_trending_item, to_user_profile
 from mcp_server_weibo.schemas import PagedFeeds, TrendingItem, FeedItem, UserProfile, CommentItem
-import json
+
+
+PASSPORT_HEADERS = {
+    **DEFAULT_HEADERS,
+    "Accept": "application/json, text/plain, */*",
+    "Referer": "https://passport.weibo.com/sso/signin?entry=miniblog&source=miniblog&url=https://weibo.com/",
+    "X-Requested-With": "XMLHttpRequest",
+}
+DEFAULT_COOKIE_FILE = Path.home() / ".config" / "mcp-server-weibo" / "cookies.json"
 
 
 class WeiboCrawler:
@@ -15,20 +30,205 @@ class WeiboCrawler:
     Provides functionality to fetch user profiles, feeds, and search for users.
 
     Access cookies are generated automatically through Weibo's visitor passport.
+    An optional QR-code login can persist an authenticated session locally.
     """
-    def __init__(self, transport: httpx.AsyncBaseTransport | None = None):
+    def __init__(
+        self,
+        transport: httpx.AsyncBaseTransport | None = None,
+        cookie_file: str | Path | None = None,
+        load_persisted_session: bool = False,
+    ):
         self.logger = logging.getLogger(__name__)
-        self.cookies = None
+        self._cookie_file = Path(cookie_file) if cookie_file is not None else DEFAULT_COOKIE_FILE
+        self.cookies = self._load_cookies() if load_persisted_session else None
         self._transport = transport
         self._cookie_lock = asyncio.Lock()
 
-    def _create_client(self, *, cookies: dict | None = None, follow_redirects: bool = False) -> httpx.AsyncClient:
+    def _create_client(
+        self,
+        *,
+        cookies: dict | httpx.Cookies | None = None,
+        follow_redirects: bool = False,
+        headers: dict | None = None,
+    ) -> httpx.AsyncClient:
         return httpx.AsyncClient(
             cookies=cookies,
             follow_redirects=follow_redirects,
+            headers=headers,
             trust_env=False,
             transport=self._transport,
         )
+
+    def _load_cookies(self) -> httpx.Cookies | None:
+        """Load a QR-login session created by this application, if available."""
+        try:
+            payload = json.loads(self._cookie_file.read_text(encoding="utf-8"))
+            cookies = payload.get("cookies", payload)
+            if isinstance(cookies, list):
+                return self._cookies_from_records(cookies)
+            # Compatibility with session files written by versions before 1.2.2.
+            return httpx.Cookies(cookies) if isinstance(cookies, dict) and cookies else None
+        except (OSError, ValueError, TypeError):
+            return None
+
+    def _save_cookies(self, cookies: httpx.Cookies) -> None:
+        """Atomically save the local QR-login session with restrictive POSIX permissions."""
+        self._cookie_file.parent.mkdir(parents=True, exist_ok=True)
+        fd, temporary_name = tempfile.mkstemp(
+            prefix=f".{self._cookie_file.name}.", dir=self._cookie_file.parent
+        )
+        try:
+            if os.name != "nt":
+                os.fchmod(fd, 0o600)
+            with os.fdopen(fd, "w", encoding="utf-8") as temporary_file:
+                json.dump({"cookies": self._cookie_records(cookies)}, temporary_file, ensure_ascii=False)
+            os.replace(temporary_name, self._cookie_file)
+        except Exception:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+            try:
+                os.unlink(temporary_name)
+            except OSError:
+                pass
+            raise
+
+    @staticmethod
+    def _cookie_value(cookies: httpx.Cookies, name: str) -> str | None:
+        for cookie in cookies.jar:
+            if cookie.name == name:
+                return cookie.value
+        return None
+
+    @staticmethod
+    def _cookie_records(cookies: httpx.Cookies) -> list[dict[str, str]]:
+        """Serialize cookies while preserving their domain and path scope."""
+        return [
+            {
+                "name": cookie.name,
+                "value": cookie.value,
+                "domain": cookie.domain,
+                "path": cookie.path,
+            }
+            for cookie in cookies.jar
+        ]
+
+    @staticmethod
+    def _cookies_from_records(records: list[dict[str, str]]) -> httpx.Cookies:
+        cookies = httpx.Cookies()
+        for record in records:
+            if not all(isinstance(record.get(key), str) for key in ("name", "value", "domain", "path")):
+                raise ValueError("Invalid cookie record")
+            cookies.set(record["name"], record["value"], domain=record["domain"], path=record["path"])
+        return cookies
+
+    @classmethod
+    def _copy_cookies(cls, cookies: httpx.Cookies) -> httpx.Cookies:
+        return cls._cookies_from_records(cls._cookie_records(cookies))
+
+    async def _session_for_cookies(self, cookies: httpx.Cookies) -> dict | None:
+        try:
+            async with self._create_client(cookies=cookies) as client:
+                response = await client.get("https://m.weibo.cn/api/config", headers=DEFAULT_HEADERS)
+                response.raise_for_status()
+                data = response.json().get("data", {})
+                if data.get("login") and data.get("uid"):
+                    session_cookies = self._copy_cookies(cookies)
+                    if data.get("st"):
+                        session_cookies.set("XSRF-TOKEN", str(data["st"]), domain="m.weibo.cn", path="/")
+                    return {"uid": str(data["uid"]), "cookies": session_cookies}
+        except (httpx.HTTPError, ValueError, TypeError):
+            return None
+        return None
+
+    async def get_session(self) -> dict | None:
+        """Return the authenticated local session, if the saved cookies remain valid."""
+        if not self.cookies:
+            return None
+        session = await self._session_for_cookies(self.cookies)
+        if session:
+            self.cookies = session["cookies"]
+            return {"login": True, "uid": session["uid"]}
+        return None
+
+    async def qr_login(self, timeout: int = 240) -> dict:
+        """Log in through a user-confirmed QR scan and save the resulting session locally.
+
+        QR protocol adapted from RicterZ/mcp-server-weibo (MIT License).
+        """
+        if timeout < 30 or timeout > 600:
+            raise ValueError("timeout must be between 30 and 600 seconds")
+
+        async with self._create_client(follow_redirects=True, headers=PASSPORT_HEADERS) as client:
+            signin = await client.get(
+                "https://passport.weibo.com/sso/signin",
+                params={"entry": "miniblog", "source": "miniblog", "url": "https://weibo.com/"},
+            )
+            signin.raise_for_status()
+            csrf_token = self._cookie_value(client.cookies, "X-CSRF-TOKEN")
+            if csrf_token:
+                client.headers["X-CSRF-TOKEN"] = csrf_token
+
+            image = await client.get(
+                "https://passport.weibo.com/sso/v2/qrcode/image",
+                params={"entry": "miniblog", "size": "180"},
+            )
+            image.raise_for_status()
+            image_data = image.json()
+            if image_data.get("retcode") != 20000000:
+                raise RuntimeError(f"Unable to request login QR code: {image_data}")
+            qr_data = image_data.get("data", {})
+            qrid = qr_data.get("qrid")
+            if not qrid:
+                raise RuntimeError("Login QR response did not include qrid")
+
+            image_url = qr_data.get("image", "")
+            scan_url = parse_qs(urlparse(image_url).query).get("data", [None])[0]
+            scan_url = scan_url or f"https://passport.weibo.cn/signin/qrcode/scan?qr={qrid}"
+            print("Scan this QR code with the Weibo app and confirm the login:")
+            code = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L, border=1)
+            code.add_data(scan_url)
+            code.print_ascii(invert=True)
+
+            deadline = asyncio.get_running_loop().time() + timeout
+            scanned = False
+            while asyncio.get_running_loop().time() < deadline:
+                check = await client.get(
+                    "https://passport.weibo.com/sso/v2/qrcode/check",
+                    params={"entry": "miniblog", "qrid": qrid, "rid": "", "ver": "20250520"},
+                )
+                check.raise_for_status()
+                check_data = check.json()
+                retcode = check_data.get("retcode")
+                if retcode == 20000000:
+                    data = check_data.get("data", {})
+                    if data.get("url"):
+                        login = await client.get(data["url"])
+                    elif data.get("alt"):
+                        login = await client.get(
+                            "https://passport.weibo.com/sso/v2/login",
+                            params={"entry": "miniblog", "alt": data["alt"], "returntype": "META"},
+                        )
+                    else:
+                        raise RuntimeError("QR login confirmation did not include a login URL")
+                    login.raise_for_status()
+                    session = await self._session_for_cookies(client.cookies)
+                    if not session:
+                        raise RuntimeError("Weibo did not return a valid authenticated session")
+                    self.cookies = session["cookies"]
+                    self._save_cookies(self.cookies)
+                    return {"login": True, "uid": session["uid"]}
+                if retcode == 50114002 and not scanned:
+                    print("QR code scanned; confirm the login in the Weibo app.")
+                    scanned = True
+                elif retcode == 50114004:
+                    raise RuntimeError("QR code expired; run login again to request a new code")
+                elif retcode != 50114001:
+                    raise RuntimeError(f"Unexpected QR login status: {check_data}")
+                await asyncio.sleep(2)
+
+        raise TimeoutError("Timed out waiting for QR login confirmation")
 
     @staticmethod
     def _is_auth_failure(response: httpx.Response) -> bool:
@@ -54,24 +254,23 @@ class WeiboCrawler:
         ).lower()
         return any(marker in message for marker in ("登录", "登陆", "cookie", "visitor", "auth"))
 
-    async def _invalidate_cookies(self, stale_cookies: dict | None) -> None:
+    async def _invalidate_cookies(self, stale_cookies: httpx.Cookies | None) -> None:
         async with self._cookie_lock:
-            if self.cookies == stale_cookies:
+            if self.cookies is stale_cookies:
                 self.cookies = None
 
     async def _get_json(self, client: httpx.AsyncClient, url: str) -> dict:
         response = await client.get(url, headers=DEFAULT_HEADERS)
         if self._is_auth_failure(response):
-            stale_cookies = self.cookies.copy() if self.cookies else None
+            stale_cookies = self.cookies
             await self._invalidate_cookies(stale_cookies)
             await self._ensure_cookies()
-            client.cookies.clear()
-            client.cookies.update(self.cookies)
+            client.cookies = self._copy_cookies(self.cookies)
             response = await client.get(url, headers=DEFAULT_HEADERS)
         response.raise_for_status()
         return response.json()
     
-    async def _validate_cookies(self, cookies: dict) -> bool:
+    async def _validate_cookies(self, cookies: httpx.Cookies) -> bool:
         try:
             async with self._create_client(cookies=cookies, follow_redirects=False) as client:
                 response = await client.get("https://m.weibo.cn/", headers=DEFAULT_HEADERS)
@@ -116,7 +315,7 @@ class WeiboCrawler:
                         if not sub or not subp:
                             raise ValueError("Missing SUB/SUBP in visitor passport response")
 
-                        generated = {"SUB": sub, "SUBP": subp}
+                        generated = httpx.Cookies({"SUB": sub, "SUBP": subp})
                         if not await self._validate_cookies(generated):
                             raise ValueError("Generated visitor cookies are invalid")
                         self.cookies = generated

@@ -1,6 +1,7 @@
 """Offline unit tests for WeiboCrawler."""
 
 import asyncio
+import json
 
 import httpx
 import pytest
@@ -31,6 +32,67 @@ def crawler_for(handler) -> WeiboCrawler:
     return WeiboCrawler(transport=httpx.MockTransport(handler))
 
 
+def test_loads_persisted_qr_session(tmp_path):
+    cookie_file = tmp_path / "cookies.json"
+    cookie_file.write_text(json.dumps({"cookies": {"SUB": "saved-session"}}), encoding="utf-8")
+
+    crawler = WeiboCrawler(cookie_file=cookie_file, load_persisted_session=True)
+
+    assert crawler.cookies["SUB"] == "saved-session"
+
+
+def test_default_crawler_does_not_load_cli_qr_session(tmp_path):
+    cookie_file = tmp_path / "cookies.json"
+    cookie_file.write_text(json.dumps({"cookies": {"SUB": "saved-session"}}), encoding="utf-8")
+
+    crawler = WeiboCrawler(cookie_file=cookie_file)
+
+    assert crawler.cookies is None
+
+
+def test_preserves_same_name_cookies_with_their_domains():
+    cookies = httpx.Cookies()
+    cookies.set("ALC", "first", domain="passport.weibo.com")
+    cookies.set("ALC", "second", domain="weibo.com")
+
+    records = WeiboCrawler._cookie_records(cookies)
+    restored = WeiboCrawler._cookies_from_records(records)
+
+    assert [(cookie.domain, cookie.value) for cookie in restored.jar if cookie.name == "ALC"] == [
+        ("passport.weibo.com", "first"),
+        ("weibo.com", "second"),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_qr_login_saves_validated_session(tmp_path, monkeypatch):
+    cookie_file = tmp_path / "cookies.json"
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/sso/signin":
+            return httpx.Response(200, headers={"Set-Cookie": "X-CSRF-TOKEN=csrf; Path=/"})
+        if request.url.path == "/sso/v2/qrcode/image":
+            return httpx.Response(200, json={
+                "retcode": 20000000,
+                "data": {"qrid": "qr-id", "image": "https://example.test/qr?data=https%3A%2F%2Fscan.test%2Fqr"},
+            })
+        if request.url.path == "/sso/v2/qrcode/check":
+            return httpx.Response(200, json={"retcode": 20000000, "data": {"alt": "alt-token"}})
+        if request.url.path == "/sso/v2/login":
+            return httpx.Response(200, headers={"Set-Cookie": "SUB=authenticated; Path=/"})
+        assert request.url.path == "/api/config"
+        return httpx.Response(200, json={"data": {"login": True, "uid": "42", "st": "xsrf"}})
+
+    monkeypatch.setattr("mcp_server_weibo.weibo.qrcode.QRCode.print_ascii", lambda *_args, **_kwargs: None)
+    crawler = WeiboCrawler(transport=httpx.MockTransport(handler), cookie_file=cookie_file)
+
+    assert await crawler.qr_login(timeout=30) == {"login": True, "uid": "42"}
+    assert crawler.cookies["SUB"] == "authenticated"
+    assert crawler.cookies.get("XSRF-TOKEN", domain="m.weibo.cn", path="/") == "xsrf"
+    saved = json.loads(cookie_file.read_text(encoding="utf-8"))["cookies"]
+    assert any(record["name"] == "SUB" and record["value"] == "authenticated" for record in saved)
+
+
 @pytest.mark.asyncio
 async def test_ensure_cookies_generates_visitor_cookie_automatically():
     async def handler(request: httpx.Request) -> httpx.Response:
@@ -42,7 +104,7 @@ async def test_ensure_cookies_generates_visitor_cookie_automatically():
     crawler = crawler_for(handler)
     await crawler._ensure_cookies()
 
-    assert crawler.cookies == {"SUB": "sub-value", "SUBP": "subp-value"}
+    assert dict(crawler.cookies) == {"SUB": "sub-value", "SUBP": "subp-value"}
 
 
 @pytest.mark.asyncio

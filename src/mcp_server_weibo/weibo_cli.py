@@ -26,6 +26,21 @@ def print_json(value):
     print(json.dumps(value, ensure_ascii=False, indent=2))
 
 
+def create_cli_crawler():
+    """Create a crawler that may reuse this CLI user's QR-login session."""
+    return WeiboCrawler(load_persisted_session=True)
+
+
+@cli.command()
+@click.option('--timeout', default=240, show_default=True, type=click.IntRange(30, 600), help='Seconds to wait for QR scan confirmation')
+def login(timeout):
+    """Log in by scanning a QR code and save the local session."""
+    async def run():
+        result = await create_cli_crawler().qr_login(timeout)
+        print_json(result)
+    asyncio.run(run())
+
+
 @cli.command()
 @click.argument('uid', type=int)
 @click.option('--limit', '-n', default=15, help='Number of feeds to fetch')
@@ -34,7 +49,7 @@ def print_json(value):
 def feeds(uid, limit, include_pics, include_profile):
     """Get user feeds by UID"""
     async def run():
-        crawler = WeiboCrawler()
+        crawler = create_cli_crawler()
         results = await crawler.get_feeds(uid, limit)
         excluded_fields = set()
         if not include_pics:
@@ -48,12 +63,19 @@ def feeds(uid, limit, include_pics, include_profile):
 @click.argument('keyword')
 @click.option('--limit', '-n', default=15, help='Number of results to return')
 @click.option('--page', '-p', default=1, help='Page number')
-def search(keyword, limit, page):
+@click.option('--include-pics/--no-include-pics', default=True, help='Include picture metadata in output')
+@click.option('--include-profile/--no-include-profile', default=False, help='Include author profile in output')
+def search(keyword, limit, page, include_pics, include_profile):
     """Search Weibo content by keyword"""
     async def run():
-        crawler = WeiboCrawler()
+        crawler = create_cli_crawler()
         results = await crawler.search_content(keyword, limit, page)
-        print_json([item.model_dump() for item in results])
+        excluded_fields = set()
+        if not include_pics:
+            excluded_fields.add('pics')
+        if not include_profile:
+            excluded_fields.add('user')
+        print_json([item.model_dump(exclude=excluded_fields) for item in results])
     asyncio.run(run())
 
 
@@ -64,7 +86,7 @@ def search(keyword, limit, page):
 def users(keyword, limit, page):
     """Search Weibo users by keyword"""
     async def run():
-        crawler = WeiboCrawler()
+        crawler = create_cli_crawler()
         results = await crawler.search_users(keyword, limit, page)
         print_json([item.model_dump() for item in results])
     asyncio.run(run())
@@ -77,7 +99,7 @@ def users(keyword, limit, page):
 def topics(keyword, limit, page):
     """Search Weibo topics by keyword"""
     async def run():
-        crawler = WeiboCrawler()
+        crawler = create_cli_crawler()
         results = await crawler.search_topics(keyword, limit, page)
         print_json(results)
     asyncio.run(run())
@@ -88,7 +110,7 @@ def topics(keyword, limit, page):
 def trending(limit):
     """Get Weibo trending hot searches"""
     async def run():
-        crawler = WeiboCrawler()
+        crawler = create_cli_crawler()
         results = await crawler.get_trendings(limit)
         print_json([item.model_dump() for item in results])
     asyncio.run(run())
@@ -99,7 +121,7 @@ def trending(limit):
 def profile(uid):
     """Get user profile by UID"""
     async def run():
-        crawler = WeiboCrawler()
+        crawler = create_cli_crawler()
         result = await crawler.get_profile(uid)
         print_json(result.model_dump() if hasattr(result, 'model_dump') else result)
     asyncio.run(run())
@@ -111,7 +133,7 @@ def profile(uid):
 def comments(feed_id, page):
     """Get comments for a Weibo post"""
     async def run():
-        crawler = WeiboCrawler()
+        crawler = create_cli_crawler()
         results = await crawler.get_comments(feed_id, page)
         print_json([item.model_dump() for item in results])
     asyncio.run(run())
@@ -124,7 +146,7 @@ def comments(feed_id, page):
 def followers(uid, limit, page):
     """Get user's followers"""
     async def run():
-        crawler = WeiboCrawler()
+        crawler = create_cli_crawler()
         results = await crawler.get_followers(uid, limit, page)
         print_json([item.model_dump() for item in results])
     asyncio.run(run())
@@ -137,7 +159,7 @@ def followers(uid, limit, page):
 def fans(uid, limit, page):
     """Get user's fans"""
     async def run():
-        crawler = WeiboCrawler()
+        crawler = create_cli_crawler()
         results = await crawler.get_fans(uid, limit, page)
         print_json([item.model_dump() for item in results])
     asyncio.run(run())
