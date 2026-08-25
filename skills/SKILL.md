@@ -7,7 +7,18 @@ description: Query public Weibo data from a terminal with the bundled weibo-cli 
 
 Use `weibo-cli` for direct terminal access. It automatically generates visitor cookies; do not configure or supply user cookies.
 
-## Run
+## Install and run
+
+```bash
+# Install once for ongoing use
+uv tool install mcp-server-weibo
+weibo-cli --help
+
+# Run commands directly after installation
+weibo-cli trending -n 3
+```
+
+Use `uvx` only for an ad-hoc command when the package should not remain installed:
 
 ```bash
 uvx --from mcp-server-weibo weibo-cli --help
