@@ -29,6 +29,27 @@ If Git history or status is needed, an authorized user can add this repository a
 
 ---
 
+## [ERR-20260825-003] python310_tomllib_check
+
+**Logged**: 2026-08-25T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+An ad-hoc release version check used `tomllib`, which is not part of Python 3.10.
+
+### Error
+```
+ModuleNotFoundError: No module named 'tomllib'
+```
+
+### Resolution
+- **Resolved**: 2026-08-25T00:00:00+08:00
+- **Notes**: Verified the version using the project files; retain Python 3.10 compatibility.
+
+---
+
 ## [ERR-20260825-002] converter_refactor_import
 
 **Logged**: 2026-08-25T00:00:00+08:00
