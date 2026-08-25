@@ -9,6 +9,8 @@ Access Weibo users, posts, trending topics, comments, topics, and social-graph d
 | Let an AI client discover and call Weibo tools | [MCP Integration Guide](docs/MCP_EN.md) |
 | Fetch JSON directly from a shell script or terminal | [CLI Guide](docs/CLI_EN.md) |
 
+See the [Schema Reference](docs/SCHEMAS_EN.md) ([中文](docs/SCHEMAS.md)) for every returned field, type, and command-to-schema mapping.
+
 ## Quick start
 
 ### MCP
