@@ -15,7 +15,7 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 
 @click.group()
-@click.version_option(version="1.0.0")
+@click.version_option(version="1.3.0")
 def cli():
     """Weibo CLI - Interact with Weibo from the command line"""
     pass
