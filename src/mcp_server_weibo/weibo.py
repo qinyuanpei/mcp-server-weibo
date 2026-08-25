@@ -509,11 +509,14 @@ class WeiboCrawler:
                 cards=data.get('data', {}).get('cards', [])
                 content_cards=[]
                 for card in cards:
+                    if not isinstance(card, dict):
+                        continue
                     if card.get('card_type') == 9:
                         content_cards.append(card)
                     elif 'card_group' in card and isinstance(card['card_group'], list):
                         content_group=[
-                            item for item in card['card_group'] if item.get('card_type') == 9]
+                            item for item in card['card_group']
+                            if isinstance(item, dict) and item.get('card_type') == 9]
                         content_cards.extend(content_group)
 
                 if not content_cards:
@@ -524,11 +527,13 @@ class WeiboCrawler:
                         break
 
                     mblog=card.get('mblog')
-                    if not mblog:
+                    if not isinstance(mblog, dict) or mblog.get('id') is None:
                         continue
 
-                    content_result=to_feed_item(mblog)
-                    results.append(content_result)
+                    try:
+                        results.append(to_feed_item(mblog))
+                    except (ValueError, KeyError, TypeError):
+                        self.logger.warning("Skipping malformed Weibo search card", exc_info=True)
 
                 current_page += 1
                 cardlist_info=data.get('data', {}).get('cardlistInfo', {})
@@ -707,8 +712,15 @@ class WeiboCrawler:
             new_since_id=data.get("data", {}).get(
                 "cardlistInfo", {}).get("since_id", "")
             cards=data.get("data", {}).get("cards", [])
-            feeds=list(map(lambda x: to_feed_item(
-                x.get('mblog', {})), cards))
+            feeds=[]
+            for card in cards:
+                mblog = card.get("mblog")
+                if not isinstance(mblog, dict) or mblog.get("id") is None:
+                    continue
+                try:
+                    feeds.append(to_feed_item(mblog))
+                except (ValueError, KeyError, TypeError):
+                    self.logger.warning("Skipping malformed Weibo feed card", exc_info=True)
 
             return PagedFeeds(SinceId=new_since_id, Feeds=feeds)
         except (httpx.HTTPError, ValueError, KeyError, TypeError):

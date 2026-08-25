@@ -142,6 +142,50 @@ async def test_get_feeds_honors_limit_when_page_contains_more_items():
 
 
 @pytest.mark.asyncio
+async def test_get_feeds_skips_non_feed_cards_without_dropping_valid_feeds():
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "visitor.passport.weibo.cn":
+            return httpx.Response(200, text='visitor_callback({"data":{"sub":"a","subp":"b"}})')
+        if request.url.path == "/":
+            return httpx.Response(200)
+        if request.url.params.get("containerid") is None:
+            return httpx.Response(200, json={"data": {"tabsInfo": {"tabs": [{"tabKey": "weibo", "containerid": "1005051"}]}}})
+        return httpx.Response(200, json={"data": {"cardlistInfo": {"since_id": ""}, "cards": [
+            {"card_type": 8, "title": "profile header"},
+            {"card_type": 9, "mblog": feed(1)},
+            {"card_type": 11, "card_group": []},
+        ]}})
+
+    result = await crawler_for(handler).get_feeds(1)
+
+    assert [item.id for item in result] == [1]
+
+
+@pytest.mark.asyncio
+async def test_search_skips_malformed_cards_without_dropping_valid_results():
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "visitor.passport.weibo.cn":
+            return httpx.Response(200, text='visitor_callback({"data":{"sub":"a","subp":"b"}})')
+        if request.url.path == "/":
+            return httpx.Response(200)
+        return httpx.Response(200, json={"data": {
+            "cardlistInfo": {"page": "1"},
+            "cards": [
+                {"card_type": 9, "mblog": {"id": 99}},
+                {"card_type": 8, "title": "search header"},
+                {"card_type": 11, "card_group": [
+                    "not-a-card",
+                    {"card_type": 9, "mblog": feed(2)},
+                ]},
+            ],
+        }})
+
+    result = await crawler_for(handler).search_content("tester", limit=2)
+
+    assert [item.id for item in result] == [2]
+
+
+@pytest.mark.asyncio
 async def test_profile_returns_empty_dict_for_http_error():
     async def handler(request: httpx.Request) -> httpx.Response:
         if request.url.host == "visitor.passport.weibo.cn":
