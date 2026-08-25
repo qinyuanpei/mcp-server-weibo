@@ -6,6 +6,7 @@
 
 | 你的目标 | 选择 |
 |---|---|
+| 让支持 Skill 的编码代理按项目约定调用 CLI | [Weibo CLI Skill](skills/SKILL.md) |
 | 让 Claude、Cursor 或其他 AI 客户端自主调用微博工具 | [MCP 接入指南](docs/MCP.md) |
 | 在终端、脚本或管道中直接取得 JSON 数据 | [CLI 使用指南](docs/CLI.md) |
 
