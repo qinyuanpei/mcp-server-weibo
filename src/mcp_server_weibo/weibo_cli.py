@@ -21,6 +21,11 @@ def cli():
     pass
 
 
+def print_json(value):
+    """Print one valid JSON document to stdout."""
+    print(json.dumps(value, ensure_ascii=False, indent=2))
+
+
 @cli.command()
 @click.argument('uid', type=int)
 @click.option('--limit', '-n', default=15, help='Number of feeds to fetch')
@@ -36,8 +41,7 @@ def feeds(uid, limit, include_pics, include_profile):
             excluded_fields.add('pics')
         if not include_profile:
             excluded_fields.add('user')
-        for item in results:
-            print(json.dumps(item.model_dump(exclude=excluded_fields), ensure_ascii=False, indent=2))
+        print_json([item.model_dump(exclude=excluded_fields) for item in results])
     asyncio.run(run())
 
 @cli.command()
@@ -49,8 +53,7 @@ def search(keyword, limit, page):
     async def run():
         crawler = WeiboCrawler()
         results = await crawler.search_content(keyword, limit, page)
-        for item in results:
-            print(json.dumps(item.model_dump(), ensure_ascii=False, indent=2))
+        print_json([item.model_dump() for item in results])
     asyncio.run(run())
 
 
@@ -63,8 +66,7 @@ def users(keyword, limit, page):
     async def run():
         crawler = WeiboCrawler()
         results = await crawler.search_users(keyword, limit, page)
-        for item in results:
-            print(json.dumps(item.model_dump(), ensure_ascii=False, indent=2))
+        print_json([item.model_dump() for item in results])
     asyncio.run(run())
 
 
@@ -77,8 +79,7 @@ def topics(keyword, limit, page):
     async def run():
         crawler = WeiboCrawler()
         results = await crawler.search_topics(keyword, limit, page)
-        for item in results:
-            print(json.dumps(item, ensure_ascii=False, indent=2))
+        print_json(results)
     asyncio.run(run())
 
 
@@ -89,8 +90,7 @@ def trending(limit):
     async def run():
         crawler = WeiboCrawler()
         results = await crawler.get_trendings(limit)
-        for item in results:
-            print(json.dumps(item.model_dump(), ensure_ascii=False, indent=2))
+        print_json([item.model_dump() for item in results])
     asyncio.run(run())
 
 
@@ -101,7 +101,7 @@ def profile(uid):
     async def run():
         crawler = WeiboCrawler()
         result = await crawler.get_profile(uid)
-        print(json.dumps(result.model_dump() if hasattr(result, 'model_dump') else result, ensure_ascii=False, indent=2))
+        print_json(result.model_dump() if hasattr(result, 'model_dump') else result)
     asyncio.run(run())
 
 
@@ -113,8 +113,7 @@ def comments(feed_id, page):
     async def run():
         crawler = WeiboCrawler()
         results = await crawler.get_comments(feed_id, page)
-        for item in results:
-            print(json.dumps(item.model_dump(), ensure_ascii=False, indent=2))
+        print_json([item.model_dump() for item in results])
     asyncio.run(run())
 
 
@@ -127,8 +126,7 @@ def followers(uid, limit, page):
     async def run():
         crawler = WeiboCrawler()
         results = await crawler.get_followers(uid, limit, page)
-        for item in results:
-            print(json.dumps(item.model_dump(), ensure_ascii=False, indent=2))
+        print_json([item.model_dump() for item in results])
     asyncio.run(run())
 
 
@@ -141,8 +139,7 @@ def fans(uid, limit, page):
     async def run():
         crawler = WeiboCrawler()
         results = await crawler.get_fans(uid, limit, page)
-        for item in results:
-            print(json.dumps(item.model_dump(), ensure_ascii=False, indent=2))
+        print_json([item.model_dump() for item in results])
     asyncio.run(run())
 
 
