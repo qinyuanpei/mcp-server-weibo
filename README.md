@@ -4,7 +4,7 @@
 
 ## 安装
 
-**自动 Cookie 获取：** 无需手动配置 Cookie，程序会自动通过微博访客通行证生成有效的访问凭证。
+**自动 Cookie 获取：** 不支持配置或读取用户 Cookie。程序始终通过微博访客通行证自动生成访问凭证。
 
 ### 方式一：从包管理器安装（推荐）
 
@@ -80,7 +80,7 @@ weibo-cli --help
 uvx --from mcp-server-weibo weibo-cli profile 1749127163
 
 # 获取用户动态
-uvx --from mcp-server-weibo weibo-cli feeds 1749127163 -n 10
+uvx --from mcp-server-weibo weibo-cli feeds 1749127163 -n 10 --no-include-pics
 
 # 搜索内容
 uvx --from mcp-server-weibo weibo-cli search "关键词"
@@ -109,7 +109,7 @@ uvx --from mcp-server-weibo weibo-cli fans 1749127163 -n 10
 | 命令 | 说明 |
 |------|------|
 | `weibo-cli profile <uid>` | 根据 UID 获取用户资料 |
-| `weibo-cli feeds <uid> [-n N]` | 获取用户动态 |
+| `weibo-cli feeds <uid> [-n N] [--include-pics/--no-include-pics] [--include-profile/--no-include-profile]` | 获取用户动态 |
 | `weibo-cli search <关键词> [-n N] [-p P]` | 按关键词搜索帖子 |
 | `weibo-cli users <关键词> [-n N] [-p P]` | 按关键词搜索用户 |
 | `weibo-cli topics <关键词> [-n N] [-p P]` | 按关键词搜索话题 |

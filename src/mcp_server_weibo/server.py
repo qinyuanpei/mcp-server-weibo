@@ -2,7 +2,6 @@ from fastmcp import FastMCP, Context
 from .weibo import WeiboCrawler
 from typing import Annotated
 from pydantic import Field
-from pathlib import Path
 import argparse
 import os
 
@@ -178,11 +177,6 @@ def main():
     """
     parser = argparse.ArgumentParser(description="Weibo MCP Server")
     parser.add_argument(
-        "--cookie",
-        type=str,
-        help="Weibo cookie string. Will be saved to tests/.env file."
-    )
-    parser.add_argument(
         "mode",
         nargs="?",
         choices=["stdio", "http"],
@@ -190,12 +184,6 @@ def main():
         help="Server mode: 'stdio' or 'http' (default: stdio)"
     )
     args = parser.parse_args()
-
-    if args.cookie:
-        env_file = Path(__file__).parent / ".env"
-        env_file.write_text(f"WEIBO_COOKIE={args.cookie}\n")
-        print(f"Cookie saved to {env_file}")
-        return
 
     if args.mode == "http":
         run_as_streamable_http()

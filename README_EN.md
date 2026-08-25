@@ -10,7 +10,7 @@ Weibo Data API Server powered by Model Context Protocol - Real-time access to We
 
 ## Installation
 
-**Automatic Cookie Generation:** No manual cookie configuration required. The server automatically generates valid access credentials through Weibo's visitor passport system.
+**Automatic Cookie Generation:** User-provided cookies are neither configured nor read. The server always generates access credentials through Weibo's visitor passport system.
 
 ### Option 1: From Package Manager (Recommended)
 
@@ -86,7 +86,7 @@ weibo-cli --help
 uvx --from mcp-server-weibo weibo-cli profile 1749127163
 
 # Get user feeds
-uvx --from mcp-server-weibo weibo-cli feeds 1749127163 -n 10
+uvx --from mcp-server-weibo weibo-cli feeds 1749127163 -n 10 --no-include-pics
 
 # Search content
 uvx --from mcp-server-weibo weibo-cli search "keyword"
@@ -115,7 +115,7 @@ uvx --from mcp-server-weibo weibo-cli fans 1749127163 -n 10
 | Command | Description |
 |---------|-------------|
 | `weibo-cli profile <uid>` | Get user profile by UID |
-| `weibo-cli feeds <uid> [-n N]` | Get user feeds |
+| `weibo-cli feeds <uid> [-n N] [--include-pics/--no-include-pics] [--include-profile/--no-include-profile]` | Get user feeds |
 | `weibo-cli search <keyword> [-n N] [-p P]` | Search posts by keyword |
 | `weibo-cli users <keyword> [-n N] [-p P]` | Search users by keyword |
 | `weibo-cli topics <keyword> [-n N] [-p P]` | Search topics by keyword |

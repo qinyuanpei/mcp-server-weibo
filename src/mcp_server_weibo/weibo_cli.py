@@ -24,13 +24,20 @@ def cli():
 @cli.command()
 @click.argument('uid', type=int)
 @click.option('--limit', '-n', default=15, help='Number of feeds to fetch')
-def feeds(uid, limit):
+@click.option('--include-pics/--no-include-pics', default=True, help='Include picture metadata in output')
+@click.option('--include-profile/--no-include-profile', default=False, help='Include author profile in output')
+def feeds(uid, limit, include_pics, include_profile):
     """Get user feeds by UID"""
     async def run():
         crawler = WeiboCrawler()
         results = await crawler.get_feeds(uid, limit)
+        excluded_fields = set()
+        if not include_pics:
+            excluded_fields.add('pics')
+        if not include_profile:
+            excluded_fields.add('user')
         for item in results:
-            print(json.dumps(item.model_dump(), ensure_ascii=False, indent=2))
+            print(json.dumps(item.model_dump(exclude=excluded_fields), ensure_ascii=False, indent=2))
     asyncio.run(run())
 
 @cli.command()
