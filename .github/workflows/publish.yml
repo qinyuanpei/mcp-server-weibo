@@ -25,6 +25,9 @@ jobs:
       - name: Run tests
         run: python -m pytest -q
 
+      - name: Check formatting
+        run: python -m black --check src tests
+
       - name: Build distributions
         run: python -m build
 

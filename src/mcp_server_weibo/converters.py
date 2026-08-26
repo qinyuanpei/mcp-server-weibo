@@ -20,8 +20,7 @@ def to_feed_item(mblog: dict) -> FeedItem:
     """Convert a raw Weibo post to a FeedItem."""
     source_pics = [pic for pic in mblog.get("pics", []) if "url" in pic]
     pics = [
-        {"thumbnail": pic["url"], "large": pic["large"]["url"]}
-        for pic in source_pics
+        {"thumbnail": pic["url"], "large": pic["large"]["url"]} for pic in source_pics
     ]
 
     videos = {}
