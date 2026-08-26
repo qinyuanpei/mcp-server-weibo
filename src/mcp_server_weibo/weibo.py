@@ -10,18 +10,17 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 import qrcode
 
-from mcp_server_weibo.consts import DEFAULT_HEADERS, PROFILE_URL, FEEDS_URL, SEARCH_URL, COMMENTS_URL
+from mcp_server_weibo.consts import (
+    COMMENTS_URL,
+    DEFAULT_HEADERS,
+    FEEDS_URL,
+    DEFAULT_COOKIE_FILE,
+    PASSPORT_HEADERS,
+    PROFILE_URL,
+    SEARCH_URL,
+)
 from mcp_server_weibo.converters import to_comment_item, to_feed_item, to_topic_item, to_trending_item, to_user_profile
 from mcp_server_weibo.schemas import PagedFeeds, TrendingItem, FeedItem, UserProfile, CommentItem
-
-
-PASSPORT_HEADERS = {
-    **DEFAULT_HEADERS,
-    "Accept": "application/json, text/plain, */*",
-    "Referer": "https://passport.weibo.com/sso/signin?entry=miniblog&source=miniblog&url=https://weibo.com/",
-    "X-Requested-With": "XMLHttpRequest",
-}
-DEFAULT_COOKIE_FILE = Path.home() / ".config" / "mcp-server-weibo" / "cookies.json"
 
 
 class WeiboCrawler:

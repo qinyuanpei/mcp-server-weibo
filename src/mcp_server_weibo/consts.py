@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 # Default HTTP headers for Weibo API requests
 DEFAULT_HEADERS = { 
     'Content-Type': 'application/json', 
@@ -22,3 +25,14 @@ SEARCH_URL = 'https://m.weibo.cn/api/container/getIndex'
 # {feed_id}: The ID of the Weibo post
 # {page}: The page number for pagination
 COMMENTS_URL = 'https://m.weibo.cn/api/comments/show?id={feed_id}&page={page}'
+
+# Headers required by Weibo Passport during QR-code login.
+PASSPORT_HEADERS = {
+    **DEFAULT_HEADERS,
+    "Accept": "application/json, text/plain, */*",
+    "Referer": "https://passport.weibo.com/sso/signin?entry=miniblog&source=miniblog&url=https://weibo.com/",
+    "X-Requested-With": "XMLHttpRequest",
+}
+
+# Default location for the CLI QR-login session.
+DEFAULT_COOKIE_FILE = Path.home() / ".config" / "mcp-server-weibo" / "cookies.json"
