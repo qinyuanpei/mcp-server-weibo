@@ -38,9 +38,12 @@ uvx --from mcp-server-weibo weibo-cli feeds 1749127163 -n 10 --no-include-pics
 
 # Optional: scan the displayed QR code to create a local authenticated CLI session
 uvx --from mcp-server-weibo weibo-cli login
+
+# Validate the current local CLI session
+uvx --from mcp-server-weibo weibo-cli session
 ```
 
-All collection commands print one valid JSON array; `profile` prints one JSON object. See the [CLI guide](docs/CLI_EN.md) for all commands.
+Collection commands print one valid JSON array; `profile` prints one JSON object, and `session` prints a login-session object or `null`. See the [CLI guide](docs/CLI_EN.md) for all commands.
 
 ## From source
 

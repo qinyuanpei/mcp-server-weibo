@@ -26,9 +26,15 @@ weibo-cli login --timeout 300
 
 命令会在终端显示二维码，等待用户在微博 App 中扫码并确认。登录成功后，会话会先校验，再保存至 `~/.config/mcp-server-weibo/cookies.json`。请勿分享此文件。程序不会从环境变量或命令行读取用户 Cookie。扫码登录仅适用于 CLI；MCP 服务始终使用访客 Cookie。
 
+使用 `session` 可校验并查看当前本机 CLI 会话；有效时输出登录状态和 UID，无有效会话时输出 `null`：
+
+```bash
+weibo-cli session
+```
+
 ## 输出格式
 
-`profile` 输出一个 JSON 对象。其他命令都输出一个完整 JSON 数组；没有结果时输出 `[]`，可直接由 `jq`、Python 或其他 JSON 工具解析。
+集合查询命令输出一个完整 JSON 数组；没有结果时输出 `[]`。`profile` 输出一个 JSON 对象，`session` 输出登录会话对象或 `null`。所有输出均可直接由 `jq`、Python 或其他 JSON 工具解析。
 
 ```bash
 weibo-cli trending -n 3
@@ -48,6 +54,7 @@ weibo-cli trending -n 3
 | `followers <uid> [-n N] [-p P]` | 获取关注列表 |
 | `fans <uid> [-n N] [-p P]` | 获取粉丝列表 |
 | `login [--timeout SECONDS]` | 扫码登录并保存本机 CLI 会话 |
+| `session` | 校验并显示当前本机 CLI 登录会话 |
 
 ## 常见流程
 

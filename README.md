@@ -36,9 +36,12 @@ uvx --from mcp-server-weibo weibo-cli feeds 1749127163 -n 10 --no-include-pics
 
 # 可选：扫码创建本机 CLI 登录会话
 uvx --from mcp-server-weibo weibo-cli login
+
+# 校验当前本机 CLI 登录会话
+uvx --from mcp-server-weibo weibo-cli session
 ```
 
-除 `profile` 外，CLI 命令输出一个完整 JSON 数组。完整命令、分页和精简输出选项见 [CLI 使用指南](docs/CLI.md)。
+集合查询命令输出一个完整 JSON 数组；`profile` 输出对象，`session` 输出登录会话对象或 `null`。完整命令、分页和精简输出选项见 [CLI 使用指南](docs/CLI.md)。
 
 ## 从源码运行
 

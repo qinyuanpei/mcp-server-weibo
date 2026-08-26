@@ -5,18 +5,20 @@ Weibo CLI - Command line interface for Weibo operations
 
 import asyncio
 import json
+import sys
+
 import click
+
 from mcp_server_weibo.weibo import WeiboCrawler
 
-import sys
-import io
-
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
-sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
 
 
 @click.group()
-@click.version_option(version="1.3.1")
+@click.version_option(version="1.3.2")
 def cli():
     """Weibo CLI - Interact with Weibo from the command line"""
     pass
@@ -46,6 +48,16 @@ def login(timeout):
     async def run():
         result = await create_cli_crawler().qr_login(timeout)
         print_json(result)
+
+    asyncio.run(run())
+
+
+@cli.command()
+def session():
+    """Show the current local CLI login session, if it is valid."""
+
+    async def run():
+        print_json(await create_cli_crawler().get_session())
 
     asyncio.run(run())
 

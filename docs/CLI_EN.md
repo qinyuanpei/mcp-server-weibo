@@ -26,9 +26,15 @@ weibo-cli login --timeout 300
 
 The command displays a QR code and waits for the user to scan and confirm it in the Weibo app. After a successful login, the session is validated and saved to `~/.config/mcp-server-weibo/cookies.json`. Do not share this file. The program never reads user cookies from environment variables or command-line options. QR-code login is available only through the CLI; the MCP server always uses visitor cookies.
 
+Use `session` to validate and inspect the current local CLI session. It prints the login status and UID when valid, or `null` when no valid session exists:
+
+```bash
+weibo-cli session
+```
+
 ## Output format
 
-`profile` prints one JSON object. Every other query command prints one complete JSON array, including `[]` when no result is available. This makes output suitable for `jq`, Python, and other JSON tools.
+Collection commands print one complete JSON array, including `[]` when no result is available. `profile` prints one JSON object, and `session` prints a login-session object or `null`. This makes all output suitable for `jq`, Python, and other JSON tools.
 
 ```bash
 weibo-cli trending -n 3
@@ -48,6 +54,7 @@ weibo-cli trending -n 3
 | `followers <uid> [-n N] [-p P]` | Get a user's followers. |
 | `fans <uid> [-n N] [-p P]` | Get a user's fans. |
 | `login [--timeout SECONDS]` | Log in by QR code and save a local CLI session. |
+| `session` | Validate and display the current local CLI login session. |
 
 ## Common workflows
 
