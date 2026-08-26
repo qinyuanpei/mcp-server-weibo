@@ -56,4 +56,8 @@ uv sync --extra dev
 uv run mcp-server-weibo
 ```
 
+## Acknowledgements
+
+The CLI QR-code login protocol implementation is adapted from [RicterZ/mcp-server-weibo](https://github.com/RicterZ/mcp-server-weibo/blob/main/src/mcp_server_weibo/weibo.py). We thank the project for implementing and openly sharing the Weibo QR-code login flow.
+
 Python >= 3.10. Licensed under [MIT](LICENSE). This project is not affiliated with Weibo and is intended for learning and research.

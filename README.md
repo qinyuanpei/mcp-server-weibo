@@ -60,6 +60,10 @@ uv run mcp-server-weibo http
 uv run weibo-cli --help
 ```
 
+## 致谢
+
+CLI 二维码登录功能的协议实现参考并改编自 [RicterZ/mcp-server-weibo](https://github.com/RicterZ/mcp-server-weibo/blob/main/src/mcp_server_weibo/weibo.py)。感谢其对微博二维码登录流程的实现与公开分享。
+
 ## 要求与声明
 
 - Python >= 3.10
