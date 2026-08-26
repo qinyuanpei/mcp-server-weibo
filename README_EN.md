@@ -1,5 +1,7 @@
 # Weibo MCP Server
 
+![mcp-server-weibo cover](assets/mcp-server-weibo-cover.png)
+
 Access Weibo users, posts, trending topics, comments, topics, and social-graph data through automatically generated visitor cookies. User-provided cookies are never read; CLI users may optionally create a locally stored session by scanning a QR code.
 
 ## Choose an interface

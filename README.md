@@ -1,5 +1,7 @@
 # Weibo MCP Server
 
+![mcp-server-weibo cover](assets/mcp-server-weibo-cover.png)
+
 通过微博访客接口提供用户、微博、热搜、评论、话题及社交关系数据。默认自动申请访客 Cookie，不读取用户手工提供的 Cookie；CLI 可通过扫码登录保存本机登录会话。
 
 ## 选择适合你的方式
