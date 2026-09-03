@@ -650,12 +650,20 @@ class WeiboCrawler:
                 ):
                     break
             except (httpx.HTTPError, ValueError, KeyError, TypeError):
-                self.logger.error(
-                    "Unable to search Weibo content for keyword '%s' on page %s",
-                    keyword,
-                    current_page,
-                    exc_info=True,
-                )
+                if results:
+                    self.logger.debug(
+                        "Unable to search Weibo content for keyword '%s' on page %s",
+                        keyword,
+                        current_page,
+                        exc_info=True,
+                    )
+                else:
+                    self.logger.error(
+                        "Unable to search Weibo content for keyword '%s' on page %s",
+                        keyword,
+                        current_page,
+                        exc_info=True,
+                    )
                 break
 
         return results[:limit]

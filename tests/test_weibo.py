@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import logging
 
 import httpx
 import pytest
@@ -267,7 +268,7 @@ async def test_search_skips_malformed_cards_without_dropping_valid_results():
 
 
 @pytest.mark.asyncio
-async def test_search_keeps_previous_page_results_when_later_page_fails():
+async def test_search_keeps_previous_page_results_when_later_page_fails(caplog):
     async def handler(request: httpx.Request) -> httpx.Response:
         if request.url.host == "visitor.passport.weibo.cn":
             return httpx.Response(
@@ -287,9 +288,15 @@ async def test_search_keeps_previous_page_results_when_later_page_fails():
             )
         return httpx.Response(503, json={"error": "unavailable"})
 
+    caplog.set_level(logging.DEBUG, logger="mcp_server_weibo.weibo")
     result = await crawler_for(handler).search_content("tester", limit=2)
 
     assert [item.id for item in result] == [1]
+    assert not any(
+        record.levelno >= logging.WARNING
+        and "Unable to search Weibo content" in record.getMessage()
+        for record in caplog.records
+    )
 
 
 @pytest.mark.asyncio

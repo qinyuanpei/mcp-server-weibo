@@ -18,7 +18,7 @@ if hasattr(sys.stderr, "reconfigure"):
 
 
 @click.group()
-@click.version_option(version="1.3.3")
+@click.version_option(version="1.3.4")
 def cli():
     """Weibo CLI - Interact with Weibo from the command line"""
     pass
