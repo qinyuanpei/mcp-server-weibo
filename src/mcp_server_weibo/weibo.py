@@ -588,7 +588,15 @@ class WeiboCrawler:
         current_page = page
         try:
             await self._ensure_cookies()
-            while len(results) < limit:
+        except (httpx.HTTPError, ValueError, KeyError, TypeError):
+            self.logger.error(
+                f"Unable to prepare Weibo search for keyword '{keyword}'",
+                exc_info=True,
+            )
+            return []
+
+        while len(results) < limit:
+            try:
                 params = {
                     "containerid": f"100103type=1&q={keyword}",
                     "page_type": "searchall",
@@ -641,12 +649,16 @@ class WeiboCrawler:
                     or str(cardlist_info.get("page")) == "1"
                 ):
                     break
-            return results[:limit]
-        except (httpx.HTTPError, ValueError, KeyError, TypeError):
-            self.logger.error(
-                f"Unable to search Weibo content for keyword '{keyword}'", exc_info=True
-            )
-            return []
+            except (httpx.HTTPError, ValueError, KeyError, TypeError):
+                self.logger.error(
+                    "Unable to search Weibo content for keyword '%s' on page %s",
+                    keyword,
+                    current_page,
+                    exc_info=True,
+                )
+                break
+
+        return results[:limit]
 
     async def search_topics(
         self, keyword: str, limit: int = 15, page: int = 1

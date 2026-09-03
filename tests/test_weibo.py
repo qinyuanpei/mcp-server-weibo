@@ -267,6 +267,32 @@ async def test_search_skips_malformed_cards_without_dropping_valid_results():
 
 
 @pytest.mark.asyncio
+async def test_search_keeps_previous_page_results_when_later_page_fails():
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "visitor.passport.weibo.cn":
+            return httpx.Response(
+                200, text='visitor_callback({"data":{"sub":"a","subp":"b"}})'
+            )
+        if request.url.path == "/":
+            return httpx.Response(200)
+        if request.url.params["page"] == "1":
+            return httpx.Response(
+                200,
+                json={
+                    "data": {
+                        "cardlistInfo": {"page": "2"},
+                        "cards": [{"card_type": 9, "mblog": feed(1)}],
+                    }
+                },
+            )
+        return httpx.Response(503, json={"error": "unavailable"})
+
+    result = await crawler_for(handler).search_content("tester", limit=2)
+
+    assert [item.id for item in result] == [1]
+
+
+@pytest.mark.asyncio
 async def test_profile_returns_empty_dict_for_http_error():
     async def handler(request: httpx.Request) -> httpx.Response:
         if request.url.host == "visitor.passport.weibo.cn":
