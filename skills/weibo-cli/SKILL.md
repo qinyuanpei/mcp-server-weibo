@@ -47,4 +47,4 @@ For `feeds` and `search`, `pics` is included by default and nested `user` is exc
 
 ## Further documentation
 
-Read [CLI usage](../docs/CLI.md) for the full command list. For AI-client integration rather than terminal use, read [MCP usage](../docs/MCP.md).
+Read [CLI usage](../../docs/CLI.md) for the full command list. For AI-client integration rather than terminal use, read [MCP usage](../../docs/MCP.md).
